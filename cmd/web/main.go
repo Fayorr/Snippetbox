@@ -12,20 +12,21 @@ type application struct {
 }
 
 func main() {
-	loggerHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	})
-	logger := slog.New(loggerHandler)
-
+	
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	app := &application{
+		logger: logger,
+	}
 	addr := flag.String("addr", ":4000", "HTTP network address")
 	mux := http.NewServeMux()
 	flag.Parse()
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
-	mux.HandleFunc("GET /", home)
-	mux.HandleFunc("GET /snippet/view", snippetView)
-	mux.HandleFunc("POST /snippet/create", snippetCreate)
+	mux.HandleFunc("GET /", app.home)
+	mux.HandleFunc("GET /snippet/view", app.snippetView)
+	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
+	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
 	// log.Printf("Starting Server at PORT %s", *addr)
 	logger.Info("Starting Server at PORT", slog.String("addr", *addr))
