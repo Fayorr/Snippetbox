@@ -20,10 +20,10 @@ func main() {
 		logger: logger,
 	}
 
-	logger.Info("Starting Server at PORT", slog.String("addr", *addr))
+	app.logger.Info("Starting Server at PORT", slog.String("addr", *addr))
 
 	err := http.ListenAndServe(*addr, app.routes())
-	logger.Error(err.Error())
+	app.logger.Error(err.Error())
 	os.Exit(1)
 
 }
