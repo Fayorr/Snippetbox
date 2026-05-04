@@ -8,10 +8,12 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql" // New import
+	"snippetbox.fayokunmiosho.com/internal/models"
 )
 
 type application struct {
-	logger *slog.Logger
+	logger   *slog.Logger
+	snippets *models.SnippetModel
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -39,21 +41,21 @@ func main() {
 		// AddSource: true,
 	}))
 
-	db, err := openDB(*dsn) 
-	
+	db, err := openDB(*dsn)
+
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
 
-	db.Close()
+	defer db.Close()
 
 	app := &application{
-		logger: logger,
+		logger:   logger,
+		snippets: &models.SnippetModel{DB: db},
 	}
 
 	app.logger.Info("Starting Server at PORT", slog.String("addr", *addr))
-
 
 	err = http.ListenAndServe(*addr, app.routes())
 	app.logger.Error(err.Error())
