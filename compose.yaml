@@ -1,0 +1,13 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root-pass
+      MYSQL_DATABASE: snippetbox
+      MYSQL_USER: web
+      MYSQL_USER_PASSWORD: pass
+    ports:
+      - "3306:3306"
+
+
+  
