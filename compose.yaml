@@ -8,6 +8,3 @@ services:
       MYSQL_USER_PASSWORD: pass
     ports:
       - "3306:3306"
-
-
-  
