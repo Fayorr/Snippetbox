@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"html/template"
@@ -34,27 +35,22 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
-
+	
 	id, err := strconv.Atoi(r.PathValue("id"))
-	if err != nil || id < 1 {
-		http.NotFound(w, r)
-		return
-	}
 
-	snippet, err := app.snippets.Get(id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			http.NotFound(w,r)
+			http.NotFound(w, r)
 		} else {
-			app.serverError(w, r, err)
+			app.serverError(w,r, err)
 		}
 		return
 	}
 
-	
-
+	snippet, err := app.snippets.Get(id)
 
 	fmt.Fprintf(w, "%+v", snippet)
+
 }
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Display a form for creating a new snippet..."))
