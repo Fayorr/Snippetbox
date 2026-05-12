@@ -85,7 +85,7 @@ WHERE expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 10`
 	for rows.Next() {
 		var s Snippet
 
-		err = rows.Scan(&s.ID, &s.Title, &s.Created, &s.Created, &s.Expires)
+		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
 		if err != nil {
 			return nil, err
 		}
