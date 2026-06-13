@@ -3,6 +3,7 @@ package main
 import (
 	"html/template"
 	"path/filepath"
+	"time"
 
 	"snippetbox.fayokunmiosho.com/internal/models"
 )
@@ -12,8 +13,17 @@ import (
 // At the moment it only contains one field, but we'll add more
 // to it as the build progresses.
 type templateData struct {
+CurrentYear int
 Snippet models.Snippet
-Snippets []models.Snippet
+Snippets []models.Snippet 
+}
+
+func humanDate(t time.Time) string {
+	t.Format("01 Apr 2026 at 20:00")
+}
+
+var functions = template.FuncMap{
+	"humanDate": humanDate,
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
@@ -29,17 +39,20 @@ func newTemplateCache() (map[string]*template.Template, error) {
 
 		name := filepath.Base(page)
 
-		files := []string{
-			"./ui/html/pages/base.tmpl",
-			"./ui/html/partials/nav.tmpl",
-			page,
-		}
-
-		ts, err := template.ParseFiles(files...) 
-
+		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/pages/base.tmpl")
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
+
+		ts, err = ts.ParseGlob("./ui/html/partials/*.tmpl")
+		if err != nil {
+			return nil, err
+		}
+		ts, err = ts.ParseFiles(page)
+		if err != nil {
+			return nil, err
+		}
+
 		cache[name] = ts
 	}
 	return cache, nil
