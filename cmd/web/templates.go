@@ -19,7 +19,7 @@ Snippets []models.Snippet
 }
 
 func humanDate(t time.Time) string {
-	t.Format("01 Apr 2026 at 20:00")
+	return t.Format("02 Jan 2006 at 15:04") // Jan 2 15:04:05 MST 2006.
 }
 
 var functions = template.FuncMap{
