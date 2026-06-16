@@ -26,6 +26,7 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, status in
 	if !ok {
 		err := fmt.Errorf("the template %s does not exist", page)
 		app.serverError(w,r,err)
+		return
 	}
 	buf := new(bytes.Buffer)
 
