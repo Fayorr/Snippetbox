@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 
 	"snippetbox.fayokunmiosho.com/internal/models"
 )
@@ -55,37 +57,79 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 		data := app.newTemplateData(r)
 
+		data.Form = snippetCreateForm{
+			Expires: 365,
+		}
+
 		app.render(w,r,http.StatusOK, "create.tmpl", data)
+}
+
+type snippetCreateForm struct {
+	Title string
+	Content string
+	Expires int
+	FieldError map[string]string
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 
-	// title := "O snail"
-	// content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	// expires := 7
-	// id, err := app.snippets.Insert(title, content, expires)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
 
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
-
-	days, err := strconv.Atoi(r.PostForm.Get("expires"))
-
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
+	form := &snippetCreateForm{
+		Title: r.PostForm.Get("title"),
+		Content: r.PostForm.Get("content"),
+		Expires: expires,
+		FieldError: map[string]string{},
 	}
 
-	id, err := app.snippets.Insert(title, content, days)
+	if strings.TrimSpace(form.Title) == ""  {
+        form.FieldError["title"] = "Title cannot be empty"
+    } 
+    if strings.TrimSpace(form.Content) == "" {
+        form.FieldError["content"] = "Content cannot be empty"
+    } else if utf8.RuneCountInString(form.Content) > 100 {
+        // This 'else if' is fine because it applies to the same field
+        form.FieldError["content"] = "Content cannot be more than 100 characters long"
+    } 
+    if expires != 1 && expires != 7 && expires != 365 {
+        form.FieldError["expires"] = "This field must equal 1, 7 or 365"
+    }
+
+	if len(form.FieldError) > 0 {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, r, http.StatusUnprocessableEntity, "create.tmpl", data)
+		return
+	}
+
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
+
+	if err != nil {
+		app.serverError(w,r,err)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+}
+
+func (app *application) snippetDelete(w http.ResponseWriter, r *http.Request) {
+	num, err := app.snippets.Delete(11)
 
 	if err != nil {
 		app.serverError(w,r,err)
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+	fmt.Fprintf(w, "snippet ID %d deleted", num)
 }
