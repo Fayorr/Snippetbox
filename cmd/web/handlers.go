@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 
 	"snippetbox.fayokunmiosho.com/internal/models"
+	"snippetbox.fayokunmiosho.com/internal/validator"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -68,18 +67,16 @@ type snippetCreateForm struct {
 	Title string
 	Content string
 	Expires int
-	FieldError map[string]string
+	validator.Validator
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-
 	err := r.ParseForm()
 
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-
 	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
 
 	if err != nil {
@@ -91,23 +88,14 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		Title: r.PostForm.Get("title"),
 		Content: r.PostForm.Get("content"),
 		Expires: expires,
-		FieldError: map[string]string{},
 	}
+		form.CheckField(validator.NotBlank(form.Title), "title", "Title cannot be empty")
+		form.CheckField(validator.NotBlank(form.Content), "content", "Content cannot be empty")
+		form.CheckField(validator.MaxChars(form.Content, 100), "content","Content cannot be more than 100 characters long")
+		form.CheckField(validator.PermittedValue(expires, 1,7,365), "expires", "This field must equal 1, 7 or 365")
+    
 
-	if strings.TrimSpace(form.Title) == ""  {
-        form.FieldError["title"] = "Title cannot be empty"
-    } 
-    if strings.TrimSpace(form.Content) == "" {
-        form.FieldError["content"] = "Content cannot be empty"
-    } else if utf8.RuneCountInString(form.Content) > 100 {
-        // This 'else if' is fine because it applies to the same field
-        form.FieldError["content"] = "Content cannot be more than 100 characters long"
-    } 
-    if expires != 1 && expires != 7 && expires != 365 {
-        form.FieldError["expires"] = "This field must equal 1, 7 or 365"
-    }
-
-	if len(form.FieldError) > 0 {
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, r, http.StatusUnprocessableEntity, "create.tmpl", data)
@@ -128,14 +116,25 @@ func (app *application) snippetDeletePost(w http.ResponseWriter, r *http.Request
 	err := r.ParseForm()
 
 	if err != nil {
+		app.logger.Error(err.Error())
 		app.serverError(w,r,err)
 	}
-	id := r.PostForm.Get("ID")
-	num, err := app.snippets.Delete(11)
+	id, err := strconv.Atoi(r.PostForm.Get("id"))
 
 	if err != nil {
+		app.logger.Error(err.Error())
 		app.serverError(w,r,err)
 	}
 
-	fmt.Fprintf(w, "snippet ID %d deleted", num)
+
+	_, err = app.snippets.Delete(id)
+
+	if err != nil {
+		app.logger.Error(err.Error())
+		app.serverError(w,r,err)
+	}
+
+	app.logger.Info("snippet deleted", "id", id)
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
