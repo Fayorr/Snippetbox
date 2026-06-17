@@ -124,7 +124,13 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
 
-func (app *application) snippetDelete(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetDeletePost(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+
+	if err != nil {
+		app.serverError(w,r,err)
+	}
+	id := r.PostForm.Get("ID")
 	num, err := app.snippets.Delete(11)
 
 	if err != nil {

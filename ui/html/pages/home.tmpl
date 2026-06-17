@@ -14,6 +14,12 @@
             <td><a href='/snippet/view/{{.ID}}'>{{.Title}}</a></td>
             <td>{{.Created}}</td>
             <td>#{{.ID}}</td>
+            <td>
+                <form method="post" action="/snippet/delete">
+                    <input type="hidden" name="{{.ID}}" value="{{.ID}}" />
+                        <button type="submit">Delete Snip</button> 
+                </form>
+            </td>
         </tr>
         {{end}}
     </table>
