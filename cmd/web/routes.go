@@ -19,8 +19,8 @@ func (app *application) routes() http.Handler {
 	mux.Handle("GET /snippet/create", dynamic.ThenFunc(app.snippetCreate))
 	mux.Handle("POST /snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
 	mux.Handle("POST /snippet/delete", dynamic.ThenFunc(app.snippetDeletePost))
-	
-	standard :=  alice.New(app.recoverPanic, app.logRequest, commonHeaders)
+
+	standard := alice.New(app.recoverPanic, app.logRequest, commonHeaders)
 	return standard.Then(mux)
 
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -17,10 +18,10 @@ import (
 )
 
 type application struct {
-	logger   *slog.Logger
-	snippets *models.SnippetModel
-	templateCache map[string]*template.Template
-	formDecoder *form.Decoder
+	logger         *slog.Logger
+	snippets       *models.SnippetModel
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
 }
 
@@ -58,7 +59,6 @@ func main() {
 
 	defer db.Close()
 
-
 	templateCache, err := newTemplateCache()
 
 	if err != nil {
@@ -73,17 +73,26 @@ func main() {
 	sessionManager.Lifetime = 12 * time.Hour
 
 	app := &application{
-		logger:   logger,
-		snippets: &models.SnippetModel{DB: db},
-		templateCache: templateCache,
-		formDecoder: formDecoder,
+		logger:         logger,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
 	}
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.CurveP256, tls.X25519},
+	}
+	srv := &http.Server{
+		Addr:      *addr,
+		Handler:   app.routes(),
+		ErrorLog:  slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		TLSConfig: tlsConfig,
+	}
 
+	logger.Info("Starting Server at PORT", slog.String("addr", *addr))
 
-	app.logger.Info("Starting Server at PORT", slog.String("addr", *addr))
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 
-	err = http.ListenAndServe(*addr, app.routes())
 	app.logger.Error(err.Error())
 	os.Exit(1)
 

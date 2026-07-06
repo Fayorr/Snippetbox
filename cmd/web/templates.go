@@ -13,10 +13,11 @@ import (
 // At the moment it only contains one field, but we'll add more
 // to it as the build progresses.
 type templateData struct {
-CurrentYear int
-Snippet models.Snippet
-Snippets []models.Snippet 
-Form any
+	CurrentYear int
+	Snippet     models.Snippet
+	Snippets    []models.Snippet
+	Form        any
+	Flash       string
 }
 
 func humanDate(t time.Time) string {

@@ -19,11 +19,11 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	data.Snippets = snippets
 
 	if err != nil {
-		app.serverError(w,r, err)
+		app.serverError(w, r, err)
 		return
 	}
 
-	app.render(w,r, http.StatusOK, "home.tmpl", data)
+	app.render(w, r, http.StatusOK, "home.tmpl", data)
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
@@ -31,8 +31,8 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 
 	if err != nil || id < 1 {
-		http.NotFound(w,r)
-		
+		http.NotFound(w, r)
+
 	}
 
 	snippet, err := app.snippets.Get(id)
@@ -41,32 +41,32 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, models.ErrNoRecord) {
 			http.NotFound(w, r)
 		} else {
-			app.serverError(w,r,err)
+			app.serverError(w, r, err)
 		}
 		return
 	}
+
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
 
-
-	app.render(w,r, http.StatusOK, "view.tmpl", data)
+	app.render(w, r, http.StatusOK, "view.tmpl", data)
 
 }
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
-		data := app.newTemplateData(r)
+	data := app.newTemplateData(r)
 
-		data.Form = snippetCreateForm{
-			Expires: 365,
-		}
+	data.Form = snippetCreateForm{
+		Expires: 365,
+	}
 
-		app.render(w,r,http.StatusOK, "create.tmpl", data)
+	app.render(w, r, http.StatusOK, "create.tmpl", data)
 }
 
 type snippetCreateForm struct {
-	Title string `form:"title"`
-	Content string `form:"content"`
-	Expires int `form:"expires"`
+	Title               string `form:"title"`
+	Content             string `form:"content"`
+	Expires             int    `form:"expires"`
 	validator.Validator `form:"-"`
 }
 
@@ -77,15 +77,16 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	err := app.decodePostForm(r, &form)
 
 	if err != nil {
-			app.clientError(w, http.StatusBadRequest)
-			return
+		app.clientError(w, http.StatusBadRequest)
+		return
 	}
 
-		form.CheckField(validator.NotBlank(form.Title), "title", "Title cannot be empty")
-		form.CheckField(validator.NotBlank(form.Content), "content", "Content cannot be empty")
-		form.CheckField(validator.MaxChars(form.Content, 100), "content","Content cannot be more than 100 characters long")
-		form.CheckField(validator.PermittedValue(form.Expires, 1,7,365), "expires", "This field must equal 1, 7 or 365")
-    
+	form.CheckField(validator.NotBlank(form.Title), "title", "Title cannot be empty")
+	form.CheckField(validator.NotBlank(form.Content), "content", "Content cannot be empty")
+	form.CheckField(validator.MaxChars(form.Content, 100), "content", "Content cannot be more than 100 characters long")
+	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
+
+	app.sessionManager.Put(r.Context(), "flash", "Snippet Saved Successfully")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -97,7 +98,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 
 	if err != nil {
-		app.serverError(w,r,err)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -109,21 +110,20 @@ func (app *application) snippetDeletePost(w http.ResponseWriter, r *http.Request
 
 	if err != nil {
 		app.logger.Error(err.Error())
-		app.serverError(w,r,err)
+		app.serverError(w, r, err)
 	}
 	id, err := strconv.Atoi(r.PostForm.Get("id"))
 
 	if err != nil {
 		app.logger.Error(err.Error())
-		app.serverError(w,r,err)
+		app.serverError(w, r, err)
 	}
-
 
 	_, err = app.snippets.Delete(id)
 
 	if err != nil {
 		app.logger.Error(err.Error())
-		app.serverError(w,r,err)
+		app.serverError(w, r, err)
 	}
 
 	app.logger.Info("snippet deleted", "id", id)
