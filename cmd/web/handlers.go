@@ -236,6 +236,11 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	exists, err :=  app.users.Exist(id)
+	if !exists {
+		
+	}
 // Use the RenewToken() method on the current session to change the session
 // ID. It's good practice to generate a new session ID when the
 // authentication state or privilege levels changes for the user (e.g. login

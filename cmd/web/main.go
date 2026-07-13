@@ -83,6 +83,7 @@ func main() {
 	}
 	tlsConfig := &tls.Config{
 		CurvePreferences: []tls.CurveID{tls.CurveP256, tls.X25519},
+		MinVersion: tls.VersionTLS13,
 	}
 	srv := &http.Server{
 		Addr:         *addr,

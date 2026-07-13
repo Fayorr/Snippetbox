@@ -6,6 +6,7 @@
 		method="post"
 		novalidate
 	>
+	<input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
 		<div>
 			<label>Name:</label>
 			{{with .Form.FieldError.name}}
