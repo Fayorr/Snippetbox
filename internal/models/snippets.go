@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+type SnippetModelInterface interface {
+	Insert(title string, content string, expires int) (int, error)
+	Get(id int) (Snippet, error)
+	Latest() ([]Snippet, error)
+	Delete(id int) (int, error)
+}
 // Define a Snippet type to hold the data for an individual snippet. Notice how
 // the fields of the struct correspond to the fields in our MySQL snippets
 // table?
@@ -52,12 +58,12 @@ WHERE expires > UTC_TIMESTAMP() AND id = ?`
 
 	var s Snippet
 
- 	err := m.DB.QueryRow(stmt, id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	err := m.DB.QueryRow(stmt, id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Snippet{}, ErrNoRecord
-		} else{
+		} else {
 			return Snippet{}, err
 		}
 	}
@@ -113,4 +119,3 @@ func (m *SnippetModel) Delete(id int) (int, error) {
 	}
 	return int(num), nil
 }
-

@@ -19,11 +19,11 @@ import (
 
 type application struct {
 	logger         *slog.Logger
-	snippets       *models.SnippetModel
+	snippets models.SnippetModelInterface 
+	users models.UserModelInterface
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
-	users          *models.UserModel
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -83,7 +83,7 @@ func main() {
 	}
 	tlsConfig := &tls.Config{
 		CurvePreferences: []tls.CurveID{tls.CurveP256, tls.X25519},
-		MinVersion: tls.VersionTLS13,
+		MinVersion:       tls.VersionTLS13,
 	}
 	srv := &http.Server{
 		Addr:         *addr,
@@ -103,4 +103,3 @@ func main() {
 	os.Exit(1)
 
 }
-
