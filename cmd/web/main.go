@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"flag"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql" // New import
+	"github.com/joho/godotenv"
 	"snippetbox.fayokunmiosho.com/internal/models"
 )
 
@@ -26,7 +28,9 @@ type application struct {
 	sessionManager *scs.SessionManager
 }
 
+
 func openDB(dsn string) (*sql.DB, error) {
+
 	db, err := sql.Open("mysql", dsn)
 
 	if err != nil {
@@ -41,9 +45,24 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
+func getEnv(key, fallback string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return fallback
+}
+
 func main() {
-	addr := flag.String("addr", ":4000", "HTTP network address")
-	dsn := flag.String("dsn", "web:nuttertools@/snippetbox?parseTime=true", "MySQL data source name")
+	_ = godotenv.Load()
+
+	dbUser := getEnv("DB_USER", "web")
+	dbPass := getEnv("DB_PASSWORD", "pass")
+	dbHost := getEnv("DB_HOST", "127.0.0.1")
+	dbPort := getEnv("DB_PORT", "3306")
+	dbName := getEnv("DB_NAME", "snippetbox")
+	
+	addr := flag.String("addr", getEnv("ADDR", ":4000"), "HTTP network address")
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", dbUser, dbPass, dbHost, dbPort, dbName)
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
@@ -51,7 +70,7 @@ func main() {
 		// AddSource: true,
 	}))
 
-	db, err := openDB(*dsn)
+	db, err := openDB(dsn)
 
 	if err != nil {
 		logger.Error(err.Error())
