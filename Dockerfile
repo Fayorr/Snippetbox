@@ -26,7 +26,9 @@ COPY --from=build-server /app/ui ./ui
 # ---> CRITICAL: Copy your local TLS certificates into the image <---
 COPY --from=build-server /app/tls ./tls
 
-# Expose both HTTP and HTTPS ports if needed (typically 4000 for Snippetbox HTTPS)
+# ---> Copy migration SQL files so golang-migrate can find them at runtime <---
+COPY --from=build-server /app/migrations ./migrations
+
 EXPOSE 4000
 
 ENTRYPOINT [ "/app/snippetbox" ]
