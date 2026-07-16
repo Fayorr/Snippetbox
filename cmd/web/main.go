@@ -24,13 +24,12 @@ import (
 
 type application struct {
 	logger         *slog.Logger
-	snippets models.SnippetModelInterface 
-	users models.UserModelInterface
+	snippets       models.SnippetModelInterface
+	users          models.UserModelInterface
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
 }
-
 
 func openDB(dsn string) (*sql.DB, error) {
 
@@ -79,15 +78,15 @@ func getEnv(key, fallback string) string {
 func main() {
 	_ = godotenv.Load()
 
-	// 2. Fetch connection variables. 
+	// 2. Fetch connection variables.
 	// Inside Docker, these will be "db" and "3306" (as passed in compose.yaml).
 	// Locally, these will fall back to your .env file or default values.
 	dbUser := getEnv("DB_USER", "web")
 	dbPass := getEnv("DB_PASSWORD", "pass")
 	dbHost := getEnv("DB_HOST", "127.0.0.1")
-	dbPort := getEnv("DB_PORT", "3306") 
+	dbPort := getEnv("DB_PORT", "3306")
 	dbName := getEnv("DB_NAME", "snippetbox")
-	
+
 	addr := flag.String("addr", getEnv("ADDR", ":4000"), "HTTP network address")
 	flag.Parse()
 
@@ -102,7 +101,13 @@ func main() {
 	db, err := openDB(dsn)
 
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Error("database connection failed",
+			"user", dbUser,
+			"host", dbHost,
+			"port", dbPort,
+			"database", dbName,
+			"error", err,
+		)
 		os.Exit(1)
 	}
 

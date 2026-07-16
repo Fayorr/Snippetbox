@@ -117,12 +117,14 @@ func (app *application) snippetDeletePost(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		app.logger.Error(err.Error())
 		app.serverError(w, r, err)
+		return
 	}
 	id, err := strconv.Atoi(r.PostForm.Get("id"))
 
 	if err != nil {
 		app.logger.Error(err.Error())
 		app.serverError(w, r, err)
+		return
 	}
 
 	_, err = app.snippets.Delete(id)
@@ -130,11 +132,19 @@ func (app *application) snippetDeletePost(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		app.logger.Error(err.Error())
 		app.serverError(w, r, err)
+		return
 	}
 
 	app.logger.Info("snippet deleted", "id", id)
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+
+	// <td>
+            //     <form method="post" action="/snippet/delete">
+            //         <input type="hidden" name="id" value="{{.ID}}" />
+            //             <button type="submit">Delete Snip</button> 
+            //     </form>
+            // </td>
 }
 
 // User Handlers
@@ -241,10 +251,6 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := app.users.Exists(id)
-	if !exists {
-
-	}
 	// Use the RenewToken() method on the current session to change the session
 	// ID. It's good practice to generate a new session ID when the
 	// authentication state or privilege levels changes for the user (e.g. login

@@ -203,3 +203,24 @@ const (
 		})
 	}
 }
+
+func TestUserLoginAuthenticatesUser(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	_, _, body := ts.get(t, "/user/login")
+	csrfToken := extractCSRFToken(t, body)
+
+	form := url.Values{}
+	form.Add("email", "alice@example.com")
+	form.Add("password", "pa$$word")
+	form.Add("csrf_token", csrfToken)
+
+	code, header, _ := ts.postForm(t, "/user/login", form)
+	assert.Equal(t, code, http.StatusSeeOther)
+	assert.Equal(t, header.Get("Location"), "/snippet/create")
+
+	code, _, _ = ts.get(t, "/snippet/create")
+	assert.Equal(t, code, http.StatusOK)
+}
