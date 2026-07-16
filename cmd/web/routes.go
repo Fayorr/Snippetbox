@@ -10,6 +10,7 @@ import (
 func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("GET /ping", ping)
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
 
 	mux.Handle("GET /static/", http.FileServerFS(ui.Files))
@@ -26,7 +27,7 @@ func (app *application) routes() http.Handler {
 	mux.Handle("POST /snippet/create", protected.ThenFunc(app.snippetCreatePost))
 	mux.Handle("POST /snippet/delete", protected.ThenFunc(app.snippetDeletePost))
 	// User Routes
-	
+
 	mux.Handle("POST /user/logout", protected.ThenFunc(app.userLogoutPost))
 
 	standard := alice.New(app.recoverPanic, app.logRequest, commonHeaders)

@@ -10,6 +10,10 @@ import (
 	"snippetbox.fayokunmiosho.com/internal/validator"
 )
 
+func ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("OK"))
+}
+
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Server", "Go")
@@ -32,7 +36,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil || id < 1 {
 		http.NotFound(w, r)
-
+		return
 	}
 
 	snippet, err := app.snippets.Get(id)
@@ -192,9 +196,9 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 }
 
 type userLoginForm struct {
-Email string `form:"email"`
-Password string `form:"password"`
-validator.Validator `form:"-"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
 }
 
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
@@ -220,11 +224,11 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = &form
-		app.render(w,r, http.StatusUnprocessableEntity, "login.tmpl", data)
+		app.render(w, r, http.StatusUnprocessableEntity, "login.tmpl", data)
 		return
 	}
 
-	id, err := app.users.Authenticate(form.Email, form.Password) 
+	id, err := app.users.Authenticate(form.Email, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
 			form.AddNonFieldError("Email or password is incorrect")
@@ -237,42 +241,41 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err :=  app.users.Exist(id)
+	exists, err := app.users.Exists(id)
 	if !exists {
-		
+
 	}
-// Use the RenewToken() method on the current session to change the session
-// ID. It's good practice to generate a new session ID when the
-// authentication state or privilege levels changes for the user (e.g. login
-// and logout operations).
+	// Use the RenewToken() method on the current session to change the session
+	// ID. It's good practice to generate a new session ID when the
+	// authentication state or privilege levels changes for the user (e.g. login
+	// and logout operations).
 	err = app.sessionManager.RenewToken(r.Context())
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
-// Add the ID of the current user to the session, so that they are now
-// 'logged in'
+	// Add the ID of the current user to the session, so that they are now
+	// 'logged in'
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
-// Redirect the user to the create snippet page.
+	// Redirect the user to the create snippet page.
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
-
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	// Use the RenewToken() method on the current session to change the session
-// ID again.
+	// ID again.
 	err := app.sessionManager.RenewToken(r.Context())
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
-// Remove the authenticatedUserID from the session data so that the user is
-// 'logged out'
+	// Remove the authenticatedUserID from the session data so that the user is
+	// 'logged out'
 
 	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
-// Add a flash message to the session to confirm to the user that they've been
-// logged out.
-	app.sessionManager.Put(r.Context(),"flash","You've been logged out successfully!")
-// Redirect the user to the application home page.
-	http.Redirect(w, r, "/" , http.StatusSeeOther)
+	// Add a flash message to the session to confirm to the user that they've been
+	// logged out.
+	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
+	// Redirect the user to the application home page.
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
